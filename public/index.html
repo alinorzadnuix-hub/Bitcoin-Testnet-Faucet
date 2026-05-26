@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bitcoin Testnet Faucet</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --primary: linear-gradient(135deg, #f7931a 0%, #ff6b35 100%);
+      --primary-solid: #f7931a;
+      --bg-primary: #0f0f23;
+      --bg-secondary: #1a1a2e;
+      --bg-card: rgba(26, 26, 46, 0.8);
+      --text-primary: #ffffff;
+      --text-secondary: #a0aec0;
+      --border-color: rgba(255, 255, 255, 0.1);
+      --success: #48bb78;
+      --error: #f56565;
+      --radius-lg: 16px;
+      --spacing-md: 1.5rem;
+      --spacing-lg: 2rem;
+      --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.35);
+      --shadow-glow: 0 0 20px rgba(247, 147, 26, 0.3);
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle at 20% 50%, rgba(247, 147, 26, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(255, 107, 53, 0.1) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .container {
+      max-width: 500px;
+      width: 100%;
+    }
+
+    .faucet-card {
+      background: var(--bg-card);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: var(--spacing-lg);
+      box-shadow: var(--shadow-lg);
+      animation: fadeIn 0.5s ease-in;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .logo {
+      text-align: center;
+      margin-bottom: var(--spacing-lg);
+    }
+
+    .logo svg {
+      margin-bottom: 1rem;
+    }
+
+    .logo h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      background: var(--primary);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 0.5rem;
+    }
+
+    .logo p {
+      color: var(--text-secondary);
+      font-size: 1rem;
+    }
+
+    .form-group {
+      margin-bottom: var(--spacing-md);
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 1rem 1.25rem;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      color: var(--text-primary);
+      font-size: 1rem;
+      transition: all 0.3s ease;
+    }
+
+    .form-group input:focus {
+      outline: none;
+      border-color: var(--primary-solid);
+      box-shadow: 0 0 0 3px rgba(247, 147, 26, 0.1);
+    }
+
+    .form-group input::placeholder {
+      color: var(--text-secondary);
+    }
+
+    .btn-claim {
+      width: 100%;
+      padding: 1.25rem;
+      font-size: 1.125rem;
+      font-weight: 600;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .btn-claim:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-glow);
+    }
+
+    .btn-claim:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .spinner {
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .message {
+      margin-top: var(--spacing-md);
+      padding: 1rem 1.25rem;
+      border-radius: 12px;
+      animation: slideIn 0.3s ease-out;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .message-success {
+      background: rgba(72, 187, 120, 0.1);
+      border: 1px solid var(--success);
+      color: var(--success);
+    }
+
+    .message-error {
+      background: rgba(245, 101, 101, 0.1);
+      border: 1px solid var(--error);
+      color: var(--error);
+    }
+
+    .message h4 {
+      margin-bottom: 0.5rem;
+      font-size: 1.125rem;
+    }
+
+    .message p {
+      margin-bottom: 0.25rem;
+    }
+
+    .message a {
+      color: inherit;
+      text-decoration: underline;
+      word-break: break-all;
+    }
+
+    @media (max-width: 768px) {
+      .logo h1 {
+        font-size: 1.5rem;
+      }
+
+      .faucet-card {
+        padding: 1.5rem;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="faucet-card">
+      <div class="logo">
+        <svg width="60" height="60" viewBox="0 0 60 60" fill="none">
+          <circle cx="30" cy="30" r="27" stroke="url(#grad1)" stroke-width="4" />
+          <text x="30" y="40" text-anchor="middle" fill="url(#grad1)" font-size="30" font-weight="bold">₿</text>
+          <defs>
+            <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" style="stop-color:#f7931a;stop-opacity:1" />
+              <stop offset="100%" style="stop-color:#ff6b35;stop-opacity:1" />
+            </linearGradient>
+          </defs>
+        </svg>
+        <h1>Bitcoin Testnet Faucet</h1>
+        <p>Get free testnet Bitcoin for development</p>
+      </div>
+
+      <form id="claimForm">
+        <div class="form-group">
+          <label for="address">Bitcoin Testnet Address</label>
+          <input type="text" id="address" name="address" placeholder="Enter your testnet address (m, n, or tb1...)"
+            required pattern="^(m|n|tb1)[a-zA-Z0-9]{25,90}$">
+        </div>
+
+        <button type="submit" class="btn-claim" id="claimBtn">
+          <span class="btn-text">💰 Claim Testnet Coins</span>
+          <span class="btn-loader" style="display: none;">
+            <div class="spinner"></div>
+          </span>
+        </button>
+      </form>
+
+      <div id="resultMessage" class="message" style="display: none;"></div>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = window.location.origin;
+
+    function satoshisToBTC(satoshis) {
+      return (satoshis / 100000000).toFixed(8);
+    }
+
+    function hideMessage() {
+      document.getElementById('resultMessage').style.display = 'none';
+    }
+
+    function showMessage(message, type = 'success') {
+      const messageEl = document.getElementById('resultMessage');
+      messageEl.className = `message message-${type}`;
+      messageEl.innerHTML = message;
+      messageEl.style.display = 'block';
+    }
+
+    document.getElementById('claimForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      hideMessage();
+
+      const address = document.getElementById('address').value.trim();
+      const btn = document.getElementById('claimBtn');
+      const btnText = btn.querySelector('.btn-text');
+      const btnLoader = btn.querySelector('.btn-loader');
+
+      btn.disabled = true;
+      btnText.style.display = 'none';
+      btnLoader.style.display = 'inline-block';
+
+      try {
+        const response = await fetch(`${API_URL}/api/claim`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ address })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          showMessage(`
+            <h4>✅ Success! Coins sent to your address</h4>
+            <p><strong>Amount:</strong> ${satoshisToBTC(data.amount)} BTC</p>
+            <p><strong>Transaction:</strong> <a href="${data.explorerUrl}" target="_blank">${data.txHash.substring(0, 16)}...</a></p>
+            <p>You can claim again in 24 hours.</p>
+          `, 'success');
+
+          document.getElementById('address').value = '';
+        } else {
+          showMessage(`<strong>Error:</strong> ${data.error}`, 'error');
+        }
+      } catch (error) {
+        showMessage('<strong>Error:</strong> Failed to process claim. Please try again later.', 'error');
+      } finally {
+        btn.disabled = false;
+        btnText.style.display = 'inline';
+        btnLoader.style.display = 'none';
+      }
+    });
+  </script>
+</body>
+
+</html>

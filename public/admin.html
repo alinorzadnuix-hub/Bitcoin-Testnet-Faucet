@@ -1,0 +1,1124 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard - Bitcoin Testnet Faucet</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+  <style>
+    .stats-grid-6 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: var(--spacing-md);
+      margin-top: var(--spacing-md);
+    }
+
+    .scanner-section {
+      background: var(--bg-card);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: var(--spacing-lg);
+      margin-bottom: var(--spacing-lg);
+    }
+
+    .search-bar-inline {
+      display: flex;
+      gap: var(--spacing-sm);
+      flex: 1;
+    }
+
+    .filter-bar {
+      display: flex;
+      gap: var(--spacing-md);
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .filter-buttons {
+      display: flex;
+      gap: var(--spacing-xs);
+      flex-wrap: wrap;
+    }
+
+    .filter-btn {
+      padding: var(--spacing-xs) var(--spacing-md);
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: var(--transition);
+      font-size: 0.875rem;
+      font-weight: 500;
+    }
+
+    .filter-btn:hover {
+      background: var(--bg-card-hover);
+      color: var(--text-primary);
+    }
+
+    .filter-btn.active {
+      background: var(--primary);
+      border-color: var(--primary-solid);
+      color: white;
+    }
+
+    #qrcode img {
+      border-radius: var(--radius-sm);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header class="header">
+      <div class="logo">
+        <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+          <circle cx="20" cy="20" r="18" stroke="url(#grad1)" stroke-width="3" />
+          <text x="20" y="27" text-anchor="middle" fill="url(#grad1)" font-size="20" font-weight="bold">₿</text>
+          <defs>
+            <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" style="stop-color:#f7931a;stop-opacity:1" />
+              <stop offset="100%" style="stop-color:#ff6b35;stop-opacity:1" />
+            </linearGradient>
+          </defs>
+        </svg>
+        <h1>Admin Dashboard</h1>
+      </div>
+      <nav>
+        <a href="/">🏠 Home</a>
+        <a href="/admin" class="active">⚙️ Admin</a>
+        <a href="#" id="logoutBtn" style="display: none;">🚪 Logout</a>
+      </nav>
+    </header>
+
+    <!-- Login Section -->
+    <div id="loginSection" class="admin-section">
+      <div class="login-card">
+        <h2>🔐 Admin Login</h2>
+        <form id="loginForm">
+          <div class="form-group">
+            <label for="username">Username</label>
+            <input type="text" id="username" name="username" required autocomplete="username">
+          </div>
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" required autocomplete="current-password">
+          </div>
+          <button type="submit" class="btn-primary">Login</button>
+        </form>
+        <div id="loginError" class="message message-error" style="display: none;"></div>
+      </div>
+    </div>
+
+    <!-- Dashboard Content -->
+    <div id="dashboardSection" style="display: none;">
+
+      <!-- Wallet Balance & Deposit Section -->
+      <div class="wallet-section">
+        <h3>💰 Wallet Balance & Deposit</h3>
+
+        <!-- Balance Display -->
+        <div class="wallet-balance-card">
+          <div class="balance-display">
+            <div class="balance-label">Available Balance</div>
+            <div class="balance-amount" id="walletBalance">Loading...</div>
+            <div class="balance-address">
+              <code id="walletAddress">-</code>
+            </div>
+          </div>
+          <button onclick="refreshBalance()" class="btn-secondary">🔄 Refresh Balance</button>
+        </div>
+
+        <!-- Deposit Instructions -->
+        <div class="deposit-instructions">
+          <h4>📥 Fund Your Faucet Wallet</h4>
+          <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+            Send testnet Bitcoin to this address to fund your faucet:
+          </p>
+
+          <div class="deposit-address-box">
+            <div class="qr-section">
+              <div id="qrcode" style="display: flex; justify-content: center; margin-bottom: 1rem;"></div>
+              <small style="color: var(--text-secondary);">Scan QR code to deposit</small>
+            </div>
+
+            <div class="address-section">
+              <label style="font-weight: 600; margin-bottom: 0.5rem; display: block;">Deposit Address:</label>
+              <div class="address-copy-box">
+                <code id="depositAddress" style="flex: 1; word-break: break-all;">Loading...</code>
+                <button onclick="copyDepositAddress()" class="btn-secondary" style="margin-left: 0.5rem;">📋
+                  Copy</button>
+              </div>
+
+              <div style="margin-top: 1rem;">
+                <small style="color: var(--text-secondary);">
+                  ℹ️ Get free testnet coins from:<br>
+                  • <a href="https://testnet-faucet.com/btc-testnet/" target="_blank"
+                    style="color: var(--primary-solid);">testnet-faucet.com</a><br>
+                  • <a href="https://bitcoinfaucet.uo1.net/" target="_blank"
+                    style="color: var(--primary-solid);">bitcoinfaucet.uo1.net</a><br>
+                  • <a href="https://coinfaucet.eu/en/btc-testnet/" target="_blank"
+                    style="color: var(--primary-solid);">coinfaucet.eu</a>
+                </small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Send Bitcoin Form -->
+        <div class="send-form-container">
+          <h4>📤 Send Bitcoin (No Limits!)</h4>
+          <form id="sendForm">
+            <div class="form-group">
+              <label for="sendAddress">Recipient Address</label>
+              <input type="text" id="sendAddress" placeholder="Enter Bitcoin testnet address..." required
+                pattern="^(m|n|2|tb1)[a-zA-Z0-9]{25,90}$">
+            </div>
+
+            <div class="form-group">
+              <label for="sendAmount">Amount (satoshis)</label>
+              <input type="number" id="sendAmount" placeholder="Enter amount in satoshis..." required min="1000"
+                step="1000">
+              <small class="hint">
+                <span id="btcEquivalent">0.00000000 BTC</span>
+                <span class="quick-amounts">
+                  Quick:
+                  <a href="#" onclick="setAmount(10000);return false;">10k</a> |
+                  <a href="#" onclick="setAmount(50000);return false;">50k</a> |
+                  <a href="#" onclick="setAmount(100000);return false;">100k</a> |
+                  <a href="#" onclick="setAmount(1000000);return false;">1M</a>
+                </span>
+              </small>
+            </div>
+
+            <div class="form-group">
+              <label for="sendNote">Note (Optional)</label>
+              <input type="text" id="sendNote" placeholder="Add a note for this transaction..." maxlength="100">
+            </div>
+
+            <button type="submit" class="btn-primary" id="sendBtn">
+              <span class="btn-text">💸 Send Bitcoin</span>
+              <span class="btn-loader" style="display: none;">
+                <div class="spinner"></div>
+              </span>
+            </button>
+          </form>
+
+          <div id="sendMessage" class="message" style="display: none;"></div>
+        </div>
+      </div>
+
+      <!-- Faucet Settings -->
+      <div class="wallet-section">
+        <h3>⚙️ Faucet Settings</h3>
+        <div class="send-form-container">
+          <h4>💰 Configure Payout Amount</h4>
+          <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+            Change the amount users receive when they claim from the faucet.
+          </p>
+          <form id="settingsForm">
+            <div class="form-group">
+              <label for="faucetAmount">Faucet Payout (satoshis)</label>
+              <input type="number" id="faucetAmount" placeholder="Enter amount in satoshis..." required min="1000"
+                step="1000" value="10000">
+              <small class="hint">
+                <span id="faucetBtcEquivalent">0.0001 BTC</span>
+                <span class="quick-amounts">
+                  Quick:
+                  <a href="#" onclick="setFaucetAmount(5000);return false;">5k</a> |
+                  <a href="#" onclick="setFaucetAmount(10000);return false;">10k</a> |
+                  <a href="#" onclick="setFaucetAmount(25000);return false;">25k</a> |
+                  <a href="#" onclick="setFaucetAmount(50000);return false;">50k</a>
+                </span>
+              </small>
+            </div>
+
+            <button type="submit" class="btn-primary" id="settingsBtn">
+              <span class="btn-text">💾 Save Settings</span>
+              <span class="btn-loader" style="display: none;">
+                <div class="spinner"></div>
+              </span>
+            </button>
+          </form>
+
+          <div id="settingsMessage" class="message" style="display: none;"></div>
+        </div>
+      </div>
+
+      <!-- Advanced Settings -->
+      <div class="wallet-section">
+        <h3>⚙️ Advanced Settings</h3>
+
+        <!-- Network Fee Settings -->
+        <div class="send-form-container">
+          <h4>⚡ Network Fee Configuration</h4>
+          <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+            Configure the transaction fee used for all Bitcoin transactions.
+          </p>
+          <form id="feeSettingsForm">
+            <div class="form-group">
+              <label for="networkFee">Transaction Fee (satoshis)</label>
+              <input type="number" id="networkFee" placeholder="Enter fee in satoshis..." required min="100" max="10000"
+                step="10" value="300">
+              <small class="hint">
+                <span id="feeRecommendation">Recommended: 200-500 sats for testnet</span>
+              </small>
+            </div>
+
+            <button type="submit" class="btn-primary" id="feeSettingsBtn">
+              <span class="btn-text">💾 Save Fee Settings</span>
+              <span class="btn-loader" style="display: none;">
+                <div class="spinner"></div>
+              </span>
+            </button>
+          </form>
+          <div id="feeMessage" class="message" style="display: none;"></div>
+        </div>
+
+        <!-- Amount Limits Control -->
+        <div class="send-form-container">
+          <h4>💰 Amount Limits Control</h4>
+          <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+            Control whether to enforce minimum and maximum amount restrictions.
+          </p>
+          <form id="limitsForm">
+            <div class="form-group">
+              <label>
+                <input type="checkbox" id="enforceMinMax" style="width: auto; margin-right: 0.5rem;">
+                <strong>Enforce Min/Max Limits</strong>
+              </label>
+              <small class="hint" style="display: block; margin-top: 0.5rem;">
+                ✅ If <strong>disabled</strong>, users can send <strong>any amount</strong> without restrictions!
+              </small>
+            </div>
+
+            <div id="minMaxInputs">
+              <div class="form-group">
+                <label for="minAmount">Minimum Amount (satoshis)</label>
+                <input type="number" id="minAmount" value="1000" min="1" step="1000">
+                <small class="hint">
+                  <span id="minBtcEquivalent">0.00001000 BTC</span>
+                </small>
+              </div>
+
+              <div class="form-group">
+                <label for="maxAmount">Maximum Amount (satoshis)</label>
+                <input type="number" id="maxAmount" value="1000000" min="1000" step="10000">
+                <small class="hint">
+                  <span id="maxBtcEquivalent">0.01000000 BTC</span>
+                </small>
+              </div>
+            </div>
+
+            <button type="submit" class="btn-primary" id="limitsBtn">
+              <span class="btn-text">💾 Save Limits</span>
+              <span class="btn-loader" style="display: none;">
+                <div class="spinner"></div>
+              </span>
+            </button>
+          </form>
+          <div id="limitsMessage" class="message" style="display: none;"></div>
+        </div>
+
+        <!-- API Control -->
+        <div class="send-form-container">
+          <h4>🔧 API Control</h4>
+          <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+            Enable or disable specific API endpoints.
+          </p>
+          <form id="apiControlForm">
+            <div class="form-group">
+              <label>
+                <input type="checkbox" id="customSendEnabled" style="width: auto; margin-right: 0.5rem;" checked>
+                <strong>Enable Custom Send API</strong>
+              </label>
+              <small class="hint" style="display: block; margin-top: 0.5rem;">
+                Allows users to send custom amounts via /api/send endpoint
+              </small>
+            </div>
+
+            <button type="submit" class="btn-primary" id="apiControlBtn">
+              <span class="btn-text">💾 Save API Settings</span>
+              <span class="btn-loader" style="display: none;">
+                <div class="spinner"></div>
+              </span>
+            </button>
+          </form>
+          <div id="apiMessage" class="message" style="display: none;"></div>
+        </div>
+      </div>
+
+      <!-- Statistics Overview -->
+      <div class="stats-section">
+        <h3>📊 Transaction Statistics</h3>
+        <div class="stats-grid stats-grid-6">
+          <div class="stat-item">
+            <div class="stat-value" id="totalTransactions">-</div>
+            <div class="stat-label">Total Transactions</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value" id="faucetClaims">-</div>
+            <div class="stat-label">Faucet Claims</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value" id="adminSends">-</div>
+            <div class="stat-label">Admin Sends</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value" id="totalSent">-</div>
+            <div class="stat-label">Total Sent (BTC)</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value" id="totalReceived">-</div>
+            <div class="stat-label">Total Received (BTC)</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value" id="totalDeposits">-</div>
+            <div class="stat-label">Deposits</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Deposit Scanner -->
+      <div class="scanner-section">
+        <h3>📥 Deposit Scanner</h3>
+        <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+          Scan for new incoming deposits to your wallet address.
+        </p>
+        <button id="scanDepositsBtn" class="btn-secondary">
+          <span class="scan-text">🔍 Scan for Deposits</span>
+          <span class="scan-loader" style="display: none;">
+            <div class="spinner"></div>
+          </span>
+        </button>
+        <div id="scanMessage" class="message" style="display: none; margin-top: 1rem;"></div>
+      </div>
+
+      <!-- Transaction Filters -->
+      <div class="filter-section">
+        <h3>🔍 Filter & Search</h3>
+        <div class="filter-bar">
+          <div class="filter-buttons">
+            <button class="filter-btn active" data-type="">All</button>
+            <button class="filter-btn" data-type="faucet_claim">Faucet Claims</button>
+            <button class="filter-btn" data-type="admin_send">Admin Sends</button>
+            <button class="filter-btn" data-type="custom_send">Custom Sends</button>
+          </div>
+
+          <div class="search-bar-inline">
+            <input type="text" id="searchInput" placeholder="Search by address..." class="search-input">
+            <button id="searchBtn" class="btn-secondary">Search</button>
+            <button id="clearSearchBtn" class="btn-secondary" style="display: none;">Clear</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Transactions Table -->
+      <div class="transactions-section">
+        <h3>📝 Transaction History</h3>
+        <div class="table-container">
+          <table class="transactions-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Type</th>
+                <th>Address</th>
+                <th>Amount (BTC)</th>
+                <th>TX Hash</th>
+                <th>Status</th>
+                <th>Note</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody id="transactionsTableBody">
+              <tr>
+                <td colspan="8" class="loading-cell">Loading transactions...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="pagination">
+          <button id="prevBtn" class="btn-secondary" disabled>← Previous</button>
+          <span id="pageInfo">Page 1</span>
+          <button id="nextBtn" class="btn-secondary">Next →</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    const API_URL = window.location.origin;
+    let authToken = localStorage.getItem('adminToken');
+    let currentPage = 0;
+    const pageSize = 50;
+    let isSearching = false;
+    let currentFilter = '';
+
+    // Format functions
+    function satoshisToBTC(satoshis) {
+      return (satoshis / 100000000).toFixed(8);
+    }
+
+    function formatDate(dateString) {
+      const date = new Date(dateString);
+      return date.toLocaleString();
+    }
+
+    function truncateAddress(address) {
+      if (!address || address.length < 16) return address;
+      return address.substring(0, 12) + '...' + address.substring(address.length - 8);
+    }
+
+    // Set quick amount
+    function setAmount(amount) {
+      document.getElementById('sendAmount').value = amount;
+      updateBTCEquivalent();
+    }
+
+    // Update BTC equivalent
+    function updateBTCEquivalent() {
+      const amount = parseInt(document.getElementById('sendAmount').value) || 0;
+      document.getElementById('btcEquivalent').textContent = satoshisToBTC(amount) + ' BTC';
+    }
+
+    // Set faucet amount
+    function setFaucetAmount(amount) {
+      document.getElementById('faucetAmount').value = amount;
+      updateFaucetBTCEquivalent();
+    }
+
+    // Update faucet BTC equivalent
+    function updateFaucetBTCEquivalent() {
+      const amount = parseInt(document.getElementById('faucetAmount').value) || 0;
+      document.getElementById('faucetBtcEquivalent').textContent = satoshisToBTC(amount) + ' BTC';
+    }
+
+    // Listen for amount changes
+    document.addEventListener('DOMContentLoaded', () => {
+      const sendAmountEl = document.getElementById('sendAmount');
+      const faucetAmountEl = document.getElementById('faucetAmount');
+
+      if (sendAmountEl) sendAmountEl.addEventListener('input', updateBTCEquivalent);
+      if (faucetAmountEl) faucetAmountEl.addEventListener('input', updateFaucetBTCEquivalent);
+
+      // Load current faucet amount
+      loadFaucetSettings();
+    });
+
+    // Load faucet settings
+    async function loadFaucetSettings() {
+      try {
+        const response = await fetch(`${API_URL}/api/info`);
+        const data = await response.json();
+        if (data.success) {
+          document.getElementById('faucetAmount').value = data.faucet.payoutAmount;
+          updateFaucetBTCEquivalent();
+        }
+      } catch (error) {
+        console.error('Failed to load settings:', error);
+      }
+    }
+
+    // Load ALL settings from new endpoint
+    async function loadAllSettings() {
+      try {
+        const response = await fetch(`${API_URL}/api/admin/settings`, {
+          headers: { 'Authorization': `Basic ${authToken}` }
+        });
+        const data = await response.json();
+
+        if (data.success) {
+          const s = data.settings;
+
+          // Network fee
+          document.getElementById('networkFee').value = s.networkFee || 300;
+
+          // Limits
+          document.getElementById('enforceMinMax').checked = s.enforceMinMax || false;
+          document.getElementById('minAmount').value = s.minAmount || 1000;
+          document.getElementById('maxAmount').value = s.maxAmount || 1000000;
+          updateMinMaxEquivalents();
+          toggleMinMaxInputs();
+
+          // API control
+          document.getElementById('customSendEnabled').checked = s.customSendEnabled !== false;
+        }
+      } catch (error) {
+        console.error('Failed to load all settings:', error);
+      }
+    }
+
+    // Update min/max BTC equivalents
+    function updateMinMaxEquivalents() {
+      const minAmount = parseInt(document.getElementById('minAmount').value) || 0;
+      const maxAmount = parseInt(document.getElementById('maxAmount').value) || 0;
+      document.getElementById('minBtcEquivalent').textContent = satoshisToBTC(minAmount) + ' BTC';
+      document.getElementById('maxBtcEquivalent').textContent = satoshisToBTC(maxAmount) + ' BTC';
+    }
+
+    // Toggle min/max inputs based on checkbox
+    function toggleMinMaxInputs() {
+      const enforced = document.getElementById('enforceMinMax').checked;
+      const inputs = document.getElementById('minMaxInputs');
+      inputs.style.opacity = enforced ? '1' : '0.5';
+      document.getElementById('minAmount').disabled = !enforced;
+      document.getElementById('maxAmount').disabled = !enforced;
+    }
+
+    // Listen for enforce checkbox change
+    document.getElementById('enforceMinMax')?.addEventListener('change', toggleMinMaxInputs);
+
+    // Listen for amount changes
+    document.getElementById('minAmount')?.addEventListener('input', updateMinMaxEquivalents);
+    document.getElementById('maxAmount')?.addEventListener('input', updateMinMaxEquivalents);
+
+    // Generic settings update function
+    async function updateSettings(settings, messageElementId) {
+      const messageEl = document.getElementById(messageElementId);
+
+      try {
+        const response = await fetch(`${API_URL}/api/admin/settings/update`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Basic ${authToken}`
+          },
+          body: JSON.stringify(settings)
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          messageEl.className = 'message message-success';
+          messageEl.innerHTML = '✅ Settings saved successfully!';
+          messageEl.style.display = 'block';
+
+          setTimeout(() => {
+            messageEl.style.display = 'none';
+          }, 3000);
+
+          return true;
+        } else {
+          throw new Error(data.error || 'Update failed');
+        }
+      } catch (error) {
+        messageEl.className = 'message message-error';
+        messageEl.textContent = '❌ ' + error.message;
+        messageEl.style.display = 'block';
+        return false;
+      }
+    }
+
+    // Fee settings form
+    document.getElementById('feeSettingsForm')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('feeSettingsBtn');
+      const btnText = btn.querySelector('.btn-text');
+      const btnLoader = btn.querySelector('.btn-loader');
+
+      btn.disabled = true;
+      btnText.style.display = 'none';
+      btnLoader.style.display = 'inline-block';
+
+      const networkFee = parseInt(document.getElementById('networkFee').value);
+      await updateSettings({ networkFee, feeType: 'fixed' }, 'feeMessage');
+
+      btn.disabled = false;
+      btnText.style.display = 'inline';
+      btnLoader.style.display = 'none';
+    });
+
+    // Limits form
+    document.getElementById('limitsForm')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('limitsBtn');
+      const btnText = btn.querySelector('.btn-text');
+      const btnLoader = btn.querySelector('.btn-loader');
+
+      btn.disabled = true;
+      btnText.style.display = 'none';
+      btnLoader.style.display = 'inline-block';
+
+      const enforceMinMax = document.getElementById('enforceMinMax').checked;
+      const minAmount = parseInt(document.getElementById('minAmount').value);
+      const maxAmount = parseInt(document.getElementById('maxAmount').value);
+
+      await updateSettings({ enforceMinMax, minAmount, maxAmount }, 'limitsMessage');
+
+      btn.disabled = false;
+      btnText.style.display = 'inline';
+      btnLoader.style.display = 'none';
+    });
+
+    // API control form
+    document.getElementById('apiControlForm')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('apiControlBtn');
+      const btnText = btn.querySelector('.btn-text');
+      const btnLoader = btn.querySelector('.btn-loader');
+
+      btn.disabled = true;
+      btnText.style.display = 'none';
+      btnLoader.style.display = 'inline-block';
+
+      const customSendEnabled = document.getElementById('customSendEnabled').checked;
+      await updateSettings({ customSendEnabled }, 'apiMessage');
+
+      btn.disabled = false;
+      btnText.style.display = 'inline';
+      btnLoader.style.display = 'none';
+    });
+
+    // Save faucet settings form (existing)
+    document.getElementById('settingsForm')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const amount = parseInt(document.getElementById('faucetAmount').value);
+      const btn = document.getElementById('settingsBtn');
+      const btnText = btn.querySelector('.btn-text');
+      const btnLoader = btn.querySelector('.btn-loader');
+      const messageEl = document.getElementById('settingsMessage');
+
+      messageEl.style.display = 'none';
+      btn.disabled = true;
+      btnText.style.display = 'none';
+      btnLoader.style.display = 'inline-block';
+
+      try {
+        const response = await fetch(`${API_URL}/api/admin/settings`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Basic ${authToken}`
+          },
+          body: JSON.stringify({ faucetAmount: amount })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          messageEl.className = 'message message-success';
+          messageEl.innerHTML = `
+            <h4>✅ Settings Saved!</h4>
+            <p>Faucet payout amount updated to ${satoshisToBTC(amount)} BTC (${amount.toLocaleString()} satoshis)</p>
+          `;
+          messageEl.style.display = 'block';
+        } else {
+          messageEl.className = 'message message-error';
+          messageEl.textContent = '❌ ' + data.error;
+          messageEl.style.display = 'block';
+        }
+      } catch (error) {
+        messageEl.className = 'message message-error';
+        messageEl.textContent = '❌ Failed to save settings';
+        messageEl.style.display = 'block';
+      } finally {
+        btn.disabled = false;
+        btnText.style.display = 'inline';
+        btnLoader.style.display = 'none';
+      }
+    });
+
+    // Check if logged in
+    function checkAuth() {
+      if (authToken) {
+        showDashboard();
+      } else {
+        showLogin();
+      }
+    }
+
+    function showLogin() {
+      document.getElementById('loginSection').style.display = 'block';
+      document.getElementById('dashboardSection').style.display = 'none';
+      document.getElementById('logoutBtn').style.display = 'none';
+    }
+
+    function showDashboard() {
+      document.getElementById('loginSection').style.display = 'none';
+      document.getElementById('dashboardSection').style.display = 'block';
+      document.getElementById('logoutBtn').style.display = 'inline';
+      loadDashboardData();
+      loadAllSettings(); // Load advanced settings
+    }
+
+    // Login
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+
+      try {
+        const response = await fetch(`${API_URL}/api/admin/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          authToken = data.token;
+          localStorage.setItem('adminToken', authToken);
+          showDashboard();
+        } else {
+          document.getElementById('loginError').textContent = '❌ ' + data.error;
+          document.getElementById('loginError').style.display = 'block';
+        }
+      } catch (error) {
+        document.getElementById('loginError').textContent = '❌ Login failed. Please try again.';
+        document.getElementById('loginError').style.display = 'block';
+      }
+    });
+
+    // Logout
+    document.getElementById('logoutBtn').addEventListener('click', (e) => {
+      e.preventDefault();
+      authToken = null;
+      localStorage.removeItem('adminToken');
+      showLogin();
+    });
+
+    // Load dashboard data
+    async function loadDashboardData() {
+      await refreshBalance();
+      await loadTransactions();
+    }
+
+    // Refresh wallet balance
+    async function refreshBalance() {
+      try {
+        const response = await fetch(`${API_URL}/api/admin/balance`, {
+          headers: { 'Authorization': `Basic ${authToken}` }
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          const balance = satoshisToBTC(data.balance);
+          document.getElementById('walletBalance').textContent = balance + ' BTC';
+          document.getElementById('walletAddress').textContent = data.address;
+          document.getElementById('depositAddress').textContent = data.address;
+
+          // Generate QR code
+          const qrcodeEl = document.getElementById('qrcode');
+          qrcodeEl.innerHTML = '';
+          new QRCode(qrcodeEl, {
+            text: data.address,
+            width: 150,
+            height: 150,
+            colorDark: "#f7931a",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.H
+          });
+        } else {
+          throw new Error(data.error);
+        }
+      } catch (error) {
+        console.error('Failed to load balance:', error);
+        document.getElementById('walletBalance').textContent = 'Error loading';
+      }
+    }
+
+    // Copy deposit address
+    function copyDepositAddress() {
+      const address = document.getElementById('depositAddress').textContent;
+      navigator.clipboard.writeText(address).then(() => {
+        const btn = event.target;
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '✅ Copied!';
+        btn.style.background = 'var(--success)';
+
+        setTimeout(() => {
+          btn.innerHTML = originalText;
+          btn.style.background = '';
+        }, 2000);
+      });
+    }
+
+    // Send Bitcoin form
+    document.getElementById('sendForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const address = document.getElementById('sendAddress').value.trim();
+      const amount = parseInt(document.getElementById('sendAmount').value);
+      const note = document.getElementById('sendNote').value.trim();
+
+      const btn = document.getElementById('sendBtn');
+      const btnText = btn.querySelector('.btn-text');
+      const btnLoader = btn.querySelector('.btn-loader');
+      const messageEl = document.getElementById('sendMessage');
+
+      messageEl.style.display = 'none';
+      btn.disabled = true;
+      btnText.style.display = 'none';
+      btnLoader.style.display = 'inline-block';
+
+      try {
+        const response = await fetch(`${API_URL}/api/admin/send`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Basic ${authToken}`
+          },
+          body: JSON.stringify({ address, amount, note })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          messageEl.className = 'message message-success';
+          messageEl.innerHTML = `
+            <h4>✅ Transaction Successful!</h4>
+            <p><strong>Amount:</strong> ${satoshisToBTC(data.amount)} BTC (${data.amount.toLocaleString()} sats)</p>
+            <p><strong>TX Hash:</strong> <a href="${data.explorerUrl}" target="_blank">${data.txHash.substring(0, 16)}...</a></p>
+            <p><strong>Fee:</strong> ${data.fee} satoshis</p>
+          `;
+          messageEl.style.display = 'block';
+
+          document.getElementById('sendForm').reset();
+          updateBTCEquivalent();
+
+          setTimeout(() => {
+            refreshBalance();
+            loadTransactions();
+          }, 1000);
+        } else {
+          messageEl.className = 'message message-error';
+          messageEl.textContent = '❌ ' + data.error;
+          messageEl.style.display = 'block';
+        }
+      } catch (error) {
+        messageEl.className = 'message message-error';
+        messageEl.textContent = '❌ Failed to send transaction: ' + error.message;
+        messageEl.style.display = 'block';
+      } finally {
+        btn.disabled = false;
+        btnText.style.display = 'inline';
+        btnLoader.style.display = 'none';
+      }
+    });
+
+    // Load transactions with filter
+    async function loadTransactions() {
+      try {
+        let url = `${API_URL}/api/admin/transactions?limit=${pageSize}&offset=${currentPage * pageSize}`;
+        if (currentFilter) {
+          url += `&type=${currentFilter}`;
+        }
+
+        const response = await fetch(url, {
+          headers: { 'Authorization': `Basic ${authToken}` }
+        });
+
+        if (response.status === 401) {
+          authToken = null;
+          localStorage.removeItem('adminToken');
+          showLogin();
+          return;
+        }
+
+        const data = await response.json();
+
+        if (data.success) {
+          // Update statistics
+          document.getElementById('totalTransactions').textContent = (data.statistics.total_claims || 0).toLocaleString();
+          document.getElementById('faucetClaims').textContent = (data.statistics.faucet_claims || 0).toLocaleString();
+          document.getElementById('adminSends').textContent = (data.statistics.admin_sends || 0).toLocaleString();
+          document.getElementById('totalSent').textContent = satoshisToBTC(data.statistics.total_sent || 0);
+          document.getElementById('totalReceived').textContent = satoshisToBTC(data.statistics.total_received || 0);
+          document.getElementById('totalDeposits').textContent = (data.statistics.total_deposits || 0).toLocaleString();
+
+          // Display transactions
+          displayTransactions(data.transactions);
+
+          // Update pagination
+          document.getElementById('pageInfo').textContent = `Page ${currentPage + 1}`;
+          document.getElementById('prevBtn').disabled = currentPage === 0;
+          document.getElementById('nextBtn').disabled = data.transactions.length < pageSize;
+        }
+      } catch (error) {
+        console.error('Failed to load transactions:', error);
+      }
+    }
+
+    // Display transactions
+    function displayTransactions(transactions) {
+      const tbody = document.getElementById('transactionsTableBody');
+
+      if (transactions.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="empty-cell">No transactions found</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = transactions.map(tx => `
+        <tr>
+          <td>${tx.id}</td>
+          <td>
+            <span class="type-badge type-${tx.type || 'faucet_claim'}">
+              ${getTypeLabel(tx.type)}
+            </span>
+          </td>
+          <td title="${tx.address}">
+            <code>${truncateAddress(tx.address)}</code>
+          </td>
+          <td>${satoshisToBTC(tx.amount)} BTC</td>
+          <td>
+            ${tx.tx_hash ? `
+              <a href="https://mempool.space/testnet/tx/${tx.tx_hash}" 
+                 target="_blank" 
+                 title="${tx.tx_hash}">
+                ${tx.tx_hash.substring(0, 8)}...
+              </a>
+            ` : '-'}
+          </td>
+          <td>
+            <span class="status-badge status-${tx.status}">${tx.status}</span>
+          </td>
+          <td>${tx.note || '-'}</td>
+          <td>${formatDate(tx.created_at)}</td>
+        </tr>
+      `).join('');
+    }
+
+    // Get type label
+    function getTypeLabel(type) {
+      const labels = {
+        'faucet_claim': '🎁 Faucet',
+        'admin_send': '💸 Admin',
+        'custom_send': '🔧 Custom',
+        'deposit': '📥 Deposit'
+      };
+      return labels[type] || type;
+    }
+
+    // Filter buttons
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', function () {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        currentFilter = this.dataset.type;
+        currentPage = 0;
+        loadTransactions();
+      });
+    });
+
+    // Search
+    document.getElementById('searchBtn').addEventListener('click', async () => {
+      const query = document.getElementById('searchInput').value.trim();
+      if (!query) return;
+
+      try {
+        const response = await fetch(`${API_URL}/api/admin/search?address=${encodeURIComponent(query)}`, {
+          headers: { 'Authorization': `Basic ${authToken}` }
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          displayTransactions(data.transactions);
+          document.getElementById('clearSearchBtn').style.display = 'inline-block';
+          document.getElementById('prevBtn').style.display = 'none';
+          document.getElementById('nextBtn').style.display = 'none';
+          document.getElementById('pageInfo').textContent = `${data.transactions.length} result(s)`;
+          isSearching = true;
+        }
+      } catch (error) {
+        console.error('Search failed:', error);
+      }
+    });
+
+    // Clear search
+    document.getElementById('clearSearchBtn').addEventListener('click', () => {
+      isSearching = false;
+      currentPage = 0;
+      document.getElementById('searchInput').value = '';
+      document.getElementById('clearSearchBtn').style.display = 'none';
+      document.getElementById('prevBtn').style.display = 'inline-block';
+      document.getElementById('nextBtn').style.display = 'inline-block';
+      loadTransactions();
+    });
+
+    // Scan deposits
+    document.getElementById('scanDepositsBtn').addEventListener('click', async () => {
+      const btn = document.getElementById('scanDepositsBtn');
+      const btnText = btn.querySelector('.scan-text');
+      const btnLoader = btn.querySelector('.scan-loader');
+      const messageEl = document.getElementById('scanMessage');
+
+      btn.disabled = true;
+      btnText.style.display = 'none';
+      btnLoader.style.display = 'inline-block';
+      messageEl.style.display = 'none';
+
+      try {
+        const response = await fetch(`${API_URL}/api/admin/scan-deposits`, {
+          method: 'POST',
+          headers: { 'Authorization': `Basic ${authToken}` }
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          messageEl.className = 'message message-success';
+          messageEl.textContent = '✅ ' + data.message;
+          messageEl.style.display = 'block';
+
+          if (data.newDeposits > 0) {
+            setTimeout(() => {
+              refreshBalance();
+              loadTransactions();
+            }, 1000);
+          }
+        } else {
+          messageEl.className = 'message message-error';
+          messageEl.textContent = '❌ ' + data.error;
+          messageEl.style.display = 'block';
+        }
+      } catch (error) {
+        messageEl.className = 'message message-error';
+        messageEl.textContent = '❌ Failed to scan for deposits';
+        messageEl.style.display = 'block';
+      } finally {
+        btn.disabled = false;
+        btnText.style.display = 'inline';
+        btnLoader.style.display = 'none';
+      }
+    });
+
+    // Pagination
+    document.getElementById('prevBtn').addEventListener('click', () => {
+      if (currentPage > 0) {
+        currentPage--;
+        loadTransactions();
+      }
+    });
+
+    document.getElementById('nextBtn').addEventListener('click', () => {
+      currentPage++;
+      loadTransactions();
+    });
+
+    // Initialize
+    checkAuth();
+
+    // Auto refresh every 30 seconds
+    setInterval(() => {
+      if (authToken && !isSearching) {
+        refreshBalance();
+        loadTransactions();
+      }
+    }, 30000);
+  </script>
+</body>
+
+</html>
